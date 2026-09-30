@@ -18,3 +18,7 @@ streamlit run app.py
 ## 注意事项
 - 终端必须激活虚拟环境（.venv），看到 (.venv) 再运行命令。
 - sentencepiece 必须为 0.1.99，否则 Windows 会崩溃。
+
+## 在线体验
+
+https://ai-sentiment-fxy.streamlit.app
