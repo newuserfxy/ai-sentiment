@@ -22,3 +22,7 @@ streamlit run app.py
 ## 在线体验
 
 https://ai-sentiment-fxy.streamlit.app
+
+## 界面预览
+
+![界面](screenshot_cloud.png)
