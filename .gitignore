@@ -22,3 +22,5 @@ Thumbs.db
 
 # Streamlit 密钥
 .streamlit/secrets.toml
+
+NOTES.md

@@ -12,8 +12,8 @@
 uer/roberta-base-finetuned-jd-binary-chinese
 
 ## 运行方式
-pip install -r requirements.txt
-streamlit run app.py
+- pip install -r requirements.txt
+- streamlit run app.py
 
 ## 注意事项
 - 终端必须激活虚拟环境（.venv），看到 (.venv) 再运行命令。
