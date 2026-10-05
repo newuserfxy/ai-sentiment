@@ -54,4 +54,10 @@ https://ai-sentiment-fxy.streamlit.app
 
 ## 界面预览
 
-![界面](screenshot_cloud.png)
+### V1 + V2 双模型
+
+![云端运行界面](screenshot_cloud.png)
+
+### 自己训练的模型
+
+![V2 运行界面](screenshot_v2.png)
