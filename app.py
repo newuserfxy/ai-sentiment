@@ -99,3 +99,14 @@ if st.button("开始分析", type="primary"):
             st.error(f"负面情绪，置信度：{score:.2%}")
         else:
             st.info(f"预测标签：{label_cn}，置信度：{score:.2%}")
+
+        # 指标卡片：两列布局
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("预测标签", label_cn)
+        with col2:
+            st.metric("置信度", f"{score:.2%}")
+
+        # 置信度进度条
+        st.write("置信度可视化：")
+        st.progress(min(max(score, 0.0), 1.0))
