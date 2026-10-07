@@ -181,6 +181,27 @@ with st.expander("📦 批量分析（上传 CSV）"):
                 st.success(f"分析完成，共 {len(df_batch)} 条。")
                 st.dataframe(df_batch, use_container_width=True)
 
+                                # ============ 统计面板 ============
+                st.divider()
+                st.subheader("📊 结果统计")
+
+                counts = df_batch["预测结果"].value_counts()
+                total = len(df_batch)
+                pos_count = int(counts.get("正面", 0))
+                neg_count = int(counts.get("负面", 0))
+
+                # 指标卡片
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("总数", total)
+                with col2:
+                    st.metric("正面", pos_count, f"{pos_count / total:.1%}")
+                with col3:
+                    st.metric("负面", neg_count, f"{neg_count / total:.1%}")
+
+                # 柱状图
+                st.bar_chart(counts)
+
                 csv_bytes = df_batch.to_csv(index=False).encode("utf-8-sig")
                 st.download_button(
                     label="📥 下载结果 CSV",
