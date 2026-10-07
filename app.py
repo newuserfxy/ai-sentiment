@@ -6,6 +6,7 @@ os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 import streamlit as st
 import joblib
 import jieba
+import pandas as pd
 
 from transformers import pipeline
 
@@ -46,6 +47,10 @@ st.set_page_config(
     page_icon="🤖",
     layout="centered",
 )
+
+# 初始化历史记录
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 st.title("🤖 AI 情感分析小项目")
 st.caption("输入一句中文，模型判断它是正面还是负面情绪。")
@@ -110,3 +115,76 @@ if st.button("开始分析", type="primary"):
         # 置信度进度条
         st.write("置信度可视化：")
         st.progress(min(max(score, 0.0), 1.0))
+
+        # 记录到历史
+        import datetime
+        st.session_state.history.append({
+            "时间": datetime.datetime.now().strftime("%H:%M:%S"),
+            "模型": model_choice,
+            "输入": text,
+            "结果": label_cn,
+            "置信度": f"{score:.2%}",
+        })
+
+# ============ 历史记录展示 ============
+st.divider()
+st.subheader("📜 历史记录")
+if st.session_state.history:
+    df_history = pd.DataFrame(st.session_state.history)
+    st.dataframe(df_history, use_container_width=True)
+    if st.button("清空历史"):
+        st.session_state.history = []
+        st.rerun()
+else:
+    st.caption("还没有分析记录。")
+
+# ============ 批量分析 ============
+st.divider()
+
+with st.expander("📦 批量分析（上传 CSV）"):
+    st.caption("CSV 文件必须包含一列名为 `text` 的文本列。")
+
+    uploaded_file = st.file_uploader("选择 CSV 文件", type=["csv"])
+
+    if uploaded_file is not None:
+        try:
+            df_batch = pd.read_csv(uploaded_file)
+        except Exception as e:
+            st.error(f"读取 CSV 失败：{e}")
+            st.stop()
+
+        if "text" not in df_batch.columns:
+            st.error("CSV 必须包含名为 text 的列。")
+        else:
+            st.write(f"共读取到 {len(df_batch)} 条数据：")
+            st.dataframe(df_batch.head(5), use_container_width=True)
+
+            if st.button("开始批量分析", type="primary"):
+                texts = df_batch["text"].astype(str).tolist()
+
+                with st.spinner(f"正在分析 {len(texts)} 条，请稍候..."):
+                    if model_choice == "预训练模型（V1）":
+                        classifier = load_hf_classifier()
+                        results = classifier(texts)
+                        labels = [HF_LABEL_MAP.get(r["label"], r["label"]) for r in results]
+                        scores = [float(r["score"]) for r in results]
+                    else:
+                        model = load_sklearn_model()
+                        preds = model.predict(texts)
+                        probas = model.predict_proba(texts)
+                        labels = ["正面" if p == 1 else "负面" for p in preds]
+                        scores = [float(probas[i][preds[i]]) for i in range(len(preds))]
+
+                df_batch["预测结果"] = labels
+                df_batch["置信度"] = [f"{s:.2%}" for s in scores]
+
+                st.success(f"分析完成，共 {len(df_batch)} 条。")
+                st.dataframe(df_batch, use_container_width=True)
+
+                csv_bytes = df_batch.to_csv(index=False).encode("utf-8-sig")
+                st.download_button(
+                    label="📥 下载结果 CSV",
+                    data=csv_bytes,
+                    file_name="batch_result.csv",
+                    mime="text/csv",
+                )
