@@ -3,7 +3,7 @@ import joblib
 import os
 import jieba
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -39,11 +39,11 @@ model = Pipeline([
     ("tfidf", TfidfVectorizer(
         tokenizer=jieba_tokenizer,
         token_pattern=None,
-        max_features=5000,
-        ngram_range=(1, 2),
-        min_df=2,
+        max_features=1000,
+        ngram_range=(1, 1),
+        min_df=1,
     )),
-    ("clf", MultinomialNB()),
+    ("clf", MultinomialNB(alpha=1.0)),
 ])
 
 print("\n开始训练...")
@@ -61,6 +61,13 @@ print(confusion_matrix(y_test, pred))
 train_pred = model.predict(X_train)
 print("\n=== 训练集评估 ===")
 print(classification_report(y_train, train_pred, target_names=["负面", "正面"], zero_division=0))
+
+# 交叉验证
+print("\n=== 交叉验证（5 折） ===")
+cv_scores = cross_val_score(model, df["text"], df["label"], cv=5, scoring="accuracy")
+print("各折:", [f"{s:.4f}" for s in cv_scores])
+print("平均:", f"{cv_scores.mean():.4f}")
+print("标准差:", f"{cv_scores.std():.4f}")
 
 # 保存
 os.makedirs("models", exist_ok=True)
