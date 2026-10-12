@@ -24,3 +24,5 @@ Thumbs.db
 .streamlit/secrets.toml
 
 NOTES.md
+
+models/bert_sentiment/

@@ -14,10 +14,15 @@ from transformers import pipeline
 # ============ 配置 ============
 HF_MODEL_NAME = "uer/roberta-base-finetuned-jd-binary-chinese"
 SKLEARN_MODEL_PATH = "models/sentiment_sklearn.joblib"
+BERT_MODEL_PATH = "models/bert_sentiment"
 
 HF_LABEL_MAP = {
     "positive (stars 4 and 5)": "正面",
     "negative (stars 1, 2 and 3)": "负面",
+}
+BERT_LABEL_MAP = {
+    "LABEL_0": "负面",
+    "LABEL_1": "正面",
 }
 
 # ============ sklearn 分词器（必须和 train.py 一致）============
@@ -41,6 +46,12 @@ def load_hf_classifier():
 @st.cache_resource(show_spinner=False)
 def load_sklearn_model():
     return joblib.load(SKLEARN_MODEL_PATH)
+
+@st.cache_resource(show_spinner=False)
+def load_bert_classifier():
+    if not os.path.exists(BERT_MODEL_PATH):
+        return None
+    return pipeline("sentiment-analysis", model=BERT_MODEL_PATH, tokenizer=BERT_MODEL_PATH)
 
 def analyze_word_weights(text, model):
     tfidf = model.named_steps["tfidf"]
@@ -130,9 +141,15 @@ st.title("🤖 AI 情感分析小项目")
 st.caption("输入一句中文，模型判断它是正面还是负面情绪。")
 
 # ============ 模型选择 ============
+# 动态生成选项：有 BERT 模型时才显示
+options = ["预训练模型（V1）", "自己训练的模型（V2）"]
+if os.path.exists(BERT_MODEL_PATH):
+    options.append("自己微调的 BERT（V3）")
+options.append("🔍 双模型对比")
+
 model_choice = st.radio(
     "选择模型：",
-    options=["预训练模型（V1）", "自己训练的模型（V2）", "🔍 双模型对比"],
+    options=options,
     horizontal=True,
 )
 
@@ -235,6 +252,16 @@ if st.button("开始分析", type="primary"):
                     raw_label = result["label"]
                     score = float(result["score"])
                     label_cn = HF_LABEL_MAP.get(raw_label, raw_label)
+                    raw_display = result
+                elif model_choice == "自己微调的 BERT（V3）":
+                    classifier_bert = load_bert_classifier()
+                    if classifier_bert is None:
+                        st.error("BERT 模型不存在。请先运行 python train_bert.py 训练。")
+                        st.stop()
+                    result = classifier_bert(text)[0]
+                    raw_label = result["label"]
+                    score = float(result["score"])
+                    label_cn = BERT_LABEL_MAP.get(raw_label, raw_label)
                     raw_display = result
                 else:
                     model = load_sklearn_model()
